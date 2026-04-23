@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tower of Hanoi — Occidental CS 101</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Occidental College <span class="sep">—</span> Computer Science 101</h1>
+      <span class="subtitle">Tower of Hanoi, visualized</span>
+    </header>
+
+    <main class="app-grid">
+      <section class="code-pane" aria-label="Python source">
+        <header class="pane-header">
+          <span>solver.py</span>
+          <span class="pane-tag" id="variant-tag">recursive</span>
+        </header>
+        <pre id="code"></pre>
+      </section>
+
+      <section class="right-pane">
+        <div class="panel explanation-panel">
+          <div class="panel-label">Current step</div>
+          <div id="explanation">Loading…</div>
+        </div>
+
+        <div class="panel step-panel">
+          <div class="panel-label">Step counter</div>
+          <div class="step-readout">
+            <span id="step-current">0</span>
+            <span class="step-sep">/</span>
+            <span id="step-total">0</span>
+          </div>
+          <div class="step-sub">
+            <span id="move-readout">0 moves made</span>
+          </div>
+        </div>
+
+        <div class="panel controls-panel">
+          <label class="control-row">
+            <span>Variant</span>
+            <select id="variant-select">
+              <option value="recursive">Recursive</option>
+              <option value="iterative">Iterative</option>
+            </select>
+          </label>
+          <label class="control-row">
+            <span>Disks</span>
+            <input id="disk-slider" type="range" min="1" max="8" value="4" />
+            <output id="disk-readout">4</output>
+          </label>
+          <label class="control-row">
+            <span>Speed</span>
+            <input id="speed-slider" type="range" min="1" max="20" value="8" />
+            <output id="speed-readout">8×</output>
+          </label>
+        </div>
+      </section>
+
+      <section class="pegs-pane" aria-label="Tower of Hanoi pegs">
+        <svg id="pegs-svg" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+        <aside class="peg-lists">
+          <div class="peg-list"><span class="peg-list-label">A</span><code id="peg-list-0">[]</code></div>
+          <div class="peg-list"><span class="peg-list-label">B</span><code id="peg-list-1">[]</code></div>
+          <div class="peg-list"><span class="peg-list-label">C</span><code id="peg-list-2">[]</code></div>
+        </aside>
+      </section>
+
+      <section class="playback-pane" aria-label="Playback controls">
+        <button id="btn-reset" type="button" title="Reset to start">↺ Reset</button>
+        <button id="btn-back"  type="button" title="Step back">⏮ Back</button>
+        <button id="btn-play"  type="button" title="Play / pause" class="primary">▶ Play</button>
+        <button id="btn-next"  type="button" title="Step forward">Next ⏭</button>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
