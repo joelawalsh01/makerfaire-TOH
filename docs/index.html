@@ -8,8 +8,13 @@
   </head>
   <body>
     <header class="app-header">
-      <h1>Occidental College <span class="sep">—</span> Computer Science 101</h1>
-      <span class="subtitle">Tower of Hanoi, visualized</span>
+      <a class="app-header-logo" href="https://www.oxy.edu" target="_blank" rel="noopener">
+        <img src="./assets/oxy-logo.png" alt="Occidental College" />
+      </a>
+      <div class="app-header-text">
+        <h1>Computer Science 101</h1>
+        <span class="subtitle">Tower of Hanoi, visualized</span>
+      </div>
     </header>
 
     <main class="app-grid">
@@ -28,18 +33,25 @@
         </div>
 
         <div class="panel step-panel">
-          <div class="panel-label">Step counter</div>
+          <div class="panel-label" id="step-label">Python line executed</div>
           <div class="step-readout">
             <span id="step-current">0</span>
             <span class="step-sep">/</span>
             <span id="step-total">0</span>
           </div>
-          <div class="step-sub">
-            <span id="move-readout">0 moves made</span>
-          </div>
+          <div class="step-sub" id="step-sub-readout">0 moves completed</div>
         </div>
 
         <div class="panel controls-panel">
+          <div class="control-row">
+            <span>Step by</span>
+            <div class="segmented" role="radiogroup" aria-label="Step granularity">
+              <input type="radio" name="granularity" id="gran-line" value="line" checked />
+              <label for="gran-line" title="Advance one Python line at a time">Python line</label>
+              <input type="radio" name="granularity" id="gran-move" value="move" />
+              <label for="gran-move" title="Advance one completed disk move at a time">Disk move</label>
+            </div>
+          </div>
           <label class="control-row">
             <span>Variant</span>
             <select id="variant-select">
@@ -54,8 +66,8 @@
           </label>
           <label class="control-row">
             <span>Speed</span>
-            <input id="speed-slider" type="range" min="1" max="20" value="8" />
-            <output id="speed-readout">8×</output>
+            <input id="speed-slider" type="range" min="1" max="40" value="12" />
+            <output id="speed-readout">167 ms</output>
           </label>
         </div>
       </section>

@@ -32,24 +32,39 @@ html, body {
 }
 
 .app-header {
-  padding: 14px 24px;
+  padding: 12px 24px;
   background: var(--oxy-black);
   color: #fff;
   display: flex;
-  align-items: baseline;
-  gap: 16px;
+  align-items: center;
+  gap: 20px;
   border-bottom: 4px solid var(--accent);
+}
+.app-header-logo {
+  display: flex;
+  align-items: center;
+  padding-right: 20px;
+  border-right: 1px solid #333;
+}
+.app-header-logo img {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+.app-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .app-header h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-.app-header .sep { color: var(--accent); margin: 0 4px; }
 .app-header .subtitle {
   color: #c8c8cc;
-  font-size: 13px;
+  font-size: 12px;
   font-style: italic;
 }
 
@@ -182,6 +197,43 @@ html, body {
   color: var(--muted);
   min-width: 24px;
   text-align: right;
+}
+
+.segmented {
+  position: relative;
+  display: inline-flex;
+  background: #f3efe6;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+  width: 100%;
+}
+.segmented input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.segmented label {
+  flex: 1;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+  user-select: none;
+  transition: background 0.12s, color 0.12s;
+}
+.segmented label:hover { color: var(--ink); }
+.segmented input[type="radio"]:checked + label {
+  background: var(--oxy-black);
+  color: #fff;
+  font-weight: 600;
+}
+.segmented input[type="radio"]:focus-visible + label {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .pegs-pane {

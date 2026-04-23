@@ -8,7 +8,8 @@ const state = {
   playTimer: null,
   variant: "recursive",
   n: 4,
-  speed: 8,
+  speed: 12,
+  granularity: "line",
 };
 
 const el = {
@@ -20,9 +21,11 @@ const el = {
   speedSlider: document.getElementById("speed-slider"),
   speedReadout: document.getElementById("speed-readout"),
   explanation: document.getElementById("explanation"),
+  stepLabel: document.getElementById("step-label"),
   stepCurrent: document.getElementById("step-current"),
   stepTotal: document.getElementById("step-total"),
-  moveReadout: document.getElementById("move-readout"),
+  stepSubReadout: document.getElementById("step-sub-readout"),
+  granularityInputs: document.querySelectorAll('input[name="granularity"]'),
   svg: document.getElementById("pegs-svg"),
   pegList: [
     document.getElementById("peg-list-0"),
@@ -37,9 +40,6 @@ const el = {
 
 async function loadSolution() {
   pause();
-  // Try pre-baked static JSON first (works on GitHub Pages and on the local
-  // server when `uv run bake` has been run). Fall back to the live FastAPI
-  // endpoint so `uv run toh` works without a prior bake step.
   const staticUrl = `./traces/solve_${state.variant}_n${state.n}.json`;
   let res = await fetch(staticUrl);
   if (!res.ok) {
@@ -128,11 +128,57 @@ function renderPegs(pegs) {
   });
 }
 
-function renderStep() {
-  const total = state.trace.length;
-  el.stepCurrent.textContent = String(state.step);
-  el.stepTotal.textContent = String(total);
+// Step indices the playback/buttons should stop at, for the current granularity.
+function milestones() {
+  if (state.granularity === "line") {
+    return Array.from({ length: state.trace.length + 1 }, (_, i) => i);
+  }
+  const out = [0];
+  state.trace.forEach((s, i) => { if (s.move) out.push(i + 1); });
+  return out;
+}
 
+function nextMilestone(dir) {
+  const ms = milestones();
+  if (dir > 0) {
+    return ms.find((v) => v > state.step) ?? state.step;
+  }
+  let best = ms[0];
+  for (const v of ms) {
+    if (v < state.step) best = v;
+    else break;
+  }
+  return best;
+}
+
+function movesCompletedBy(step) {
+  let count = 0;
+  for (let i = 0; i < step; i++) if (state.trace[i] && state.trace[i].move) count++;
+  return count;
+}
+
+function totalMoves() {
+  return state.trace.reduce((c, s) => c + (s.move ? 1 : 0), 0);
+}
+
+function updateCounter() {
+  const movesDone = movesCompletedBy(state.step);
+  const total = totalMoves();
+  if (state.granularity === "move") {
+    el.stepLabel.textContent = "Disk move";
+    el.stepCurrent.textContent = String(movesDone);
+    el.stepTotal.textContent = String(total);
+    el.stepSubReadout.textContent = `Python line ${state.step} of ${state.trace.length}`;
+  } else {
+    el.stepLabel.textContent = "Python line executed";
+    el.stepCurrent.textContent = String(state.step);
+    el.stepTotal.textContent = String(state.trace.length);
+    const word = movesDone === 1 ? "move" : "moves";
+    el.stepSubReadout.textContent = `${movesDone} ${word} completed of ${total}`;
+  }
+}
+
+function renderStep() {
   let pegs, note, line;
   if (state.step === 0) {
     pegs = state.initialPegs;
@@ -145,11 +191,7 @@ function renderStep() {
     line = entry.line;
   }
 
-  const movesMade = state.trace
-    .slice(0, state.step)
-    .reduce((c, s) => c + (s.move ? 1 : 0), 0);
-  el.moveReadout.textContent = movesMade === 1 ? "1 move made" : `${movesMade} moves made`;
-
+  updateCounter();
   renderPegs(pegs);
   highlightLine(line);
 
@@ -167,9 +209,14 @@ function escapeHtml(s) {
   })[c]);
 }
 
+function atLastMilestone() {
+  const ms = milestones();
+  return state.step >= ms[ms.length - 1];
+}
+
 function play() {
   if (state.playing) return;
-  if (state.step >= state.trace.length) state.step = 0;
+  if (atLastMilestone()) state.step = 0;
   state.playing = true;
   el.btnPlay.textContent = "⏸ Pause";
   tick();
@@ -186,35 +233,39 @@ function pause() {
 
 function tick() {
   if (!state.playing) return;
-  if (state.step >= state.trace.length) {
-    pause();
-    return;
-  }
-  state.step += 1;
+  if (atLastMilestone()) { pause(); return; }
+  state.step = nextMilestone(1);
   renderStep();
-  const interval = Math.max(40, Math.round(1000 / state.speed));
-  state.playTimer = setTimeout(tick, interval);
+  const delay = Math.max(25, Math.round(2000 / state.speed));
+  state.playTimer = setTimeout(tick, delay);
 }
 
 function stepForward() {
   pause();
-  if (state.step < state.trace.length) {
-    state.step += 1;
-    renderStep();
-  }
+  state.step = nextMilestone(1);
+  renderStep();
 }
 
 function stepBack() {
   pause();
-  if (state.step > 0) {
-    state.step -= 1;
-    renderStep();
-  }
+  state.step = nextMilestone(-1);
+  renderStep();
 }
 
 function reset() {
   pause();
   state.step = 0;
+  renderStep();
+}
+
+function setGranularity(g) {
+  if (g === state.granularity) return;
+  state.granularity = g;
+  // Snap state.step to the nearest milestone ≤ current step in the new mode.
+  const ms = milestones();
+  let snapped = 0;
+  for (const v of ms) { if (v <= state.step) snapped = v; else break; }
+  state.step = snapped;
   renderStep();
 }
 
@@ -226,12 +277,16 @@ el.diskSlider.addEventListener("input", (e) => {
   state.n = parseInt(e.target.value, 10);
   el.diskReadout.textContent = String(state.n);
 });
-el.diskSlider.addEventListener("change", () => {
-  loadSolution();
-});
+el.diskSlider.addEventListener("change", () => { loadSolution(); });
 el.speedSlider.addEventListener("input", (e) => {
   state.speed = parseInt(e.target.value, 10);
-  el.speedReadout.textContent = `${state.speed}×`;
+  const delay = Math.max(25, Math.round(2000 / state.speed));
+  el.speedReadout.textContent = `${delay} ms`;
+});
+el.granularityInputs.forEach((input) => {
+  input.addEventListener("change", (e) => {
+    if (e.target.checked) setGranularity(e.target.value);
+  });
 });
 el.btnPlay.addEventListener("click", () => (state.playing ? pause() : play()));
 el.btnBack.addEventListener("click", stepBack);
