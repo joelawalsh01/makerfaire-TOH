@@ -298,6 +298,131 @@ html, body {
 }
 .playback-pane button.primary:hover { background: #d95e14; }
 
+.help-button {
+  margin-left: auto;
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid #555;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: border-color 0.15s, color 0.15s;
+}
+.help-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.help-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Tutorial overlay — backdrop, spotlight, and tooltip are all siblings at
+   the root stacking context so their z-indexes order correctly:
+   backdrop (999) < spotlight (1000) < tooltip (1001). Keeping #tutorial-root
+   without position/z-index means it does NOT form its own stacking context. */
+#tutorial-root.tutorial-hidden { display: none; }
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.55);
+  z-index: 999;
+  pointer-events: all;
+}
+.tutorial-spotlight {
+  position: relative;
+  z-index: 1000;
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.tutorial-tooltip {
+  position: fixed;
+  background: #fff;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 16px 18px;
+  max-width: 360px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.30);
+  z-index: 1001;
+  pointer-events: all;
+  font-family: var(--sans);
+}
+.tutorial-tooltip h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tutorial-tooltip p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.tutorial-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tutorial-progress {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.tutorial-buttons {
+  display: flex;
+  gap: 8px;
+}
+.tutorial-tooltip button {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 5px;
+  border: 1px solid var(--panel-border);
+  background: #f3efe6;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--sans);
+}
+.tutorial-tooltip button:hover { background: #ece6d5; }
+.tutorial-tooltip button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+.tutorial-tooltip button.primary:hover { background: #d95e14; }
+.tutorial-tooltip button.tutorial-skip {
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+.tutorial-tooltip button.tutorial-skip:hover {
+  background: #f3efe6;
+  color: var(--ink);
+}
+.tutorial-tooltip.tutorial-centered {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
+  max-width: 440px;
+  padding: 22px 24px;
+}
+.tutorial-tooltip.tutorial-centered h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.tutorial-tooltip.tutorial-centered p {
+  font-size: 14px;
+}
+
 @media (max-width: 860px) {
   .app-grid {
     grid-template-columns: 1fr;

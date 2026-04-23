@@ -38,6 +38,8 @@ const el = {
   btnReset: document.getElementById("btn-reset"),
 };
 
+let firstLoadDone = false;
+
 async function loadSolution() {
   pause();
   const staticUrl = `./traces/solve_${state.variant}_n${state.n}.json`;
@@ -58,6 +60,12 @@ async function loadSolution() {
   el.variantTag.textContent = data.variant;
   renderCode(state.source);
   renderStep();
+  if (!firstLoadDone) {
+    firstLoadDone = true;
+    try {
+      if (!localStorage.getItem(TUTORIAL_KEY)) startTutorial(0);
+    } catch (e) { /* localStorage unavailable — skip auto-open */ }
+  }
 }
 
 function renderCode(source) {
@@ -294,11 +302,203 @@ el.btnNext.addEventListener("click", stepForward);
 el.btnReset.addEventListener("click", reset);
 
 document.addEventListener("keydown", (e) => {
+  if (!tutorialRoot.classList.contains("tutorial-hidden")) return;
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
   if (e.key === " ") { e.preventDefault(); state.playing ? pause() : play(); }
   else if (e.key === "ArrowRight") stepForward();
   else if (e.key === "ArrowLeft") stepBack();
   else if (e.key === "r" || e.key === "R") reset();
 });
+
+// ---------- Tutorial ----------
+
+const TUTORIAL_KEY = "toh_tutorial_seen_v1";
+const TUTORIAL_STEPS = [
+  {
+    welcome: true,
+    title: "Tower of Hanoi, visualized",
+    body: "This app shows how a Python program solves the Tower of Hanoi — the code and the pegs update together, step by step. Would you like a quick tour of the interface?",
+  },
+  {
+    target: ".code-pane",
+    title: "The Python solver",
+    body: "This is the actual Python code being run. As the program executes, the currently-active line is highlighted — watch it move as the algorithm breaks the problem down.",
+  },
+  {
+    target: ".pegs-pane",
+    title: "The pegs",
+    body: "Disks start on peg A and must end on peg C, with the rule that a larger disk may never sit on a smaller one. The bracketed text next to each peg shows that peg as a Python list — the underlying data structure the program manipulates.",
+  },
+  {
+    target: ".explanation-panel",
+    title: "What's happening",
+    body: "Plain-English narration of each step — which disk is being lifted, what just moved where, or what the current recursive call is solving.",
+  },
+  {
+    target: ".step-panel",
+    title: "Step counter",
+    body: "How far into the execution you are. The label and count change based on the 'Step by' toggle below — count every Python line the program runs, or only the completed disk moves.",
+  },
+  {
+    target: ".controls-panel",
+    title: "Simulation settings",
+    body: "Switch between the recursive and iterative algorithms (same puzzle, different code), change the number of disks, or tune playback speed. The 'Step by' toggle changes what the step counter counts.",
+  },
+  {
+    target: ".playback-pane",
+    title: "Playback",
+    body: "Play the full solution, step through one instruction at a time, or reset. Keyboard shortcuts: space = play/pause, ← → = step forward/back, R = reset.",
+  },
+  {
+    final: true,
+    title: "You're ready to explore",
+    body: "Try the recursive variant at 4 disks first, then switch to iterative to see the same moves produced by a completely different algorithm. You can reopen this tour anytime with the ? button in the header.",
+  },
+];
+
+const tutorialRoot = document.getElementById("tutorial-root");
+const tooltipEl = tutorialRoot.querySelector(".tutorial-tooltip");
+const tutorialTitleEl = document.getElementById("tutorial-title");
+const tutorialBodyEl = document.getElementById("tutorial-body");
+const tutorialProgressEl = tutorialRoot.querySelector(".tutorial-progress");
+const tutorialBackBtn = tutorialRoot.querySelector(".tutorial-back");
+const tutorialNextBtn = tutorialRoot.querySelector(".tutorial-next");
+const tutorialSkipBtn = tutorialRoot.querySelector(".tutorial-skip");
+let tutorialIndex = 0;
+let tutorialMinIndex = 0;
+
+function clearSpotlight() {
+  document.querySelectorAll(".tutorial-spotlight").forEach((e) =>
+    e.classList.remove("tutorial-spotlight")
+  );
+}
+
+function positionTooltip(target) {
+  tooltipEl.classList.remove("tutorial-centered");
+  tooltipEl.style.transform = "";
+  // Temporarily position at origin so measurements reflect the final size.
+  tooltipEl.style.top = "0px";
+  tooltipEl.style.left = "0px";
+  const rect = target.getBoundingClientRect();
+  const tw = tooltipEl.offsetWidth;
+  const th = tooltipEl.offsetHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const margin = 12;
+
+  let top = rect.bottom + margin;
+  let left = rect.left;
+
+  if (top + th > vh - 10) {
+    top = rect.top - th - margin;
+    if (top < 10) {
+      top = Math.max(10, Math.min(vh - 10 - th, rect.top + (rect.height - th) / 2));
+      if (rect.right + margin + tw <= vw - 10) left = rect.right + margin;
+      else left = Math.max(10, rect.left - margin - tw);
+    }
+  }
+
+  if (left + tw > vw - 10) left = vw - 10 - tw;
+  if (left < 10) left = 10;
+  if (top + th > vh - 10) top = vh - 10 - th;
+  if (top < 10) top = 10;
+
+  tooltipEl.style.top = `${top}px`;
+  tooltipEl.style.left = `${left}px`;
+}
+
+function renderTutorialStep() {
+  clearSpotlight();
+  const step = TUTORIAL_STEPS[tutorialIndex];
+  if (!step) return;
+
+  tutorialTitleEl.textContent = step.title;
+  tutorialBodyEl.textContent = step.body;
+
+  const contentCount = TUTORIAL_STEPS.filter((s) => !s.welcome).length;
+  const contentIdx = TUTORIAL_STEPS.slice(0, tutorialIndex + 1).filter((s) => !s.welcome).length;
+
+  if (step.welcome) {
+    tooltipEl.classList.add("tutorial-centered");
+    tooltipEl.style.top = "";
+    tooltipEl.style.left = "";
+    tutorialProgressEl.textContent = "";
+    tutorialBackBtn.style.display = "none";
+    tutorialSkipBtn.style.display = "";
+    tutorialSkipBtn.textContent = "No thanks";
+    tutorialNextBtn.textContent = "Yes, show me";
+  } else if (step.final) {
+    tooltipEl.classList.add("tutorial-centered");
+    tooltipEl.style.top = "";
+    tooltipEl.style.left = "";
+    tutorialProgressEl.textContent = `${contentIdx} of ${contentCount}`;
+    tutorialBackBtn.style.display = "";
+    tutorialSkipBtn.style.display = "none";
+    tutorialNextBtn.textContent = "Finish";
+  } else {
+    const target = document.querySelector(step.target);
+    if (target) {
+      target.classList.add("tutorial-spotlight");
+      target.scrollIntoView({ block: "nearest" });
+      positionTooltip(target);
+    }
+    tutorialProgressEl.textContent = `${contentIdx} of ${contentCount}`;
+    tutorialBackBtn.style.display = tutorialIndex > Math.max(tutorialMinIndex, 1) ? "" : "none";
+    tutorialSkipBtn.style.display = "";
+    tutorialSkipBtn.textContent = "Skip";
+    tutorialNextBtn.textContent = "Next";
+  }
+
+  tutorialNextBtn.focus();
+}
+
+function startTutorial(fromStep = 0) {
+  pause();
+  tutorialIndex = fromStep;
+  tutorialMinIndex = fromStep;
+  tutorialRoot.classList.remove("tutorial-hidden");
+  tutorialRoot.setAttribute("aria-hidden", "false");
+  renderTutorialStep();
+}
+
+function endTutorial() {
+  tutorialRoot.classList.add("tutorial-hidden");
+  tutorialRoot.setAttribute("aria-hidden", "true");
+  clearSpotlight();
+  try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (e) { /* noop */ }
+}
+
+tutorialNextBtn.addEventListener("click", () => {
+  tutorialIndex += 1;
+  if (tutorialIndex >= TUTORIAL_STEPS.length) endTutorial();
+  else renderTutorialStep();
+});
+tutorialBackBtn.addEventListener("click", () => {
+  if (tutorialIndex > tutorialMinIndex) {
+    tutorialIndex -= 1;
+    renderTutorialStep();
+  }
+});
+tutorialSkipBtn.addEventListener("click", endTutorial);
+
+document.getElementById("btn-help").addEventListener("click", () => startTutorial(1));
+
+document.addEventListener("keydown", (e) => {
+  if (tutorialRoot.classList.contains("tutorial-hidden")) return;
+  if (e.key === "Escape") { e.preventDefault(); endTutorial(); }
+  else if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); tutorialNextBtn.click(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); tutorialBackBtn.click(); }
+});
+
+function repositionIfOpen() {
+  if (tutorialRoot.classList.contains("tutorial-hidden")) return;
+  const step = TUTORIAL_STEPS[tutorialIndex];
+  if (step && step.target) {
+    const target = document.querySelector(step.target);
+    if (target) positionTooltip(target);
+  }
+}
+window.addEventListener("resize", repositionIfOpen);
+window.addEventListener("scroll", repositionIfOpen, { passive: true });
 
 loadSolution();
