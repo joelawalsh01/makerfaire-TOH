@@ -282,8 +282,17 @@ el.variantSelect.addEventListener("change", (e) => {
   loadSolution();
 });
 el.diskSlider.addEventListener("input", (e) => {
-  state.n = parseInt(e.target.value, 10);
+  const newN = parseInt(e.target.value, 10);
+  if (newN === state.n) return;
+  state.n = newN;
   el.diskReadout.textContent = String(state.n);
+  pause();
+  // Show the new disk count immediately while the user is still dragging;
+  // the full trace for animation loads on `change` (slider release).
+  state.initialPegs = [Array.from({ length: state.n }, (_, i) => state.n - i), [], []];
+  state.trace = [];
+  state.step = 0;
+  renderStep();
 });
 el.diskSlider.addEventListener("change", () => { loadSolution(); });
 el.speedSlider.addEventListener("input", (e) => {
